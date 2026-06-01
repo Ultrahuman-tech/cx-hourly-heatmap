@@ -197,6 +197,20 @@ tfoot .agcol { color:var(--ink3); font-weight:500 }
   font-weight:600; letter-spacing:.01em
 }
 
+/* shift selector */
+.agshift { margin-top:5px }
+.shiftsel {
+  font:inherit; font-size:10.5px; font-weight:600;
+  padding:2px 8px 2px 7px; border-radius:7px; border:none; cursor:pointer;
+  background:#EDEBF5; color:#9B93B3; transition:.12s; max-width:150px;
+  appearance:none; -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23B0AAC0'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 6px center;
+  padding-right:20px;
+}
+.shiftsel:hover { background-color:#DDD8F0; color:#5B21B6 }
+.shiftsel.set { background-color:#EDE9FE; color:#5B21B6 }
+
 /* ── drop zone ───────────────────────────────────────────────── */
 .drop {
   position:fixed; inset:0; z-index:60;
@@ -227,8 +241,8 @@ tfoot .agcol { color:var(--ink3); font-weight:500 }
       <button data-d="Deferred">Deferred</button>
     </div>
     <div class="seg" id="orderSeg">
-      <button data-o="shift" class="on">Shift 7am→7am</button>
-      <button data-o="cal">Calendar 12am→</button>
+      <button data-o="shift" class="on">Shift 7AM→7AM</button>
+      <button data-o="cal">Calendar 12AM→</button>
     </div>
     <div class="seg">
       <label class="btn" style="box-shadow:none;padding:5px 12px;font-size:12px;color:var(--ink2)">
@@ -261,17 +275,42 @@ const HOURS_CAL   = [...Array(24).keys()];
 const HOURS_SHIFT = [...HOURS_CAL.slice(7), ...HOURS_CAL.slice(0,7)];
 const state = { date:'', agents:[], order:'shift', duty:'all', sort:'total',
                 metric:'tickets', fields:['replies','escalated','closed'],
-                tags:{} }; // { agentName: { tagKey: bool } } — persists across re-renders
+                tags:{} }; // { agentName: { shiftDay: { shift:'', tagKey:bool } } }
 
-/* Selectable admin tags — colour shown when active, faded when not */
+/* Admin tags — colour shown when active */
 const TAGS = [
   { key:'Escalations',  activeBg:'#FEE2E2', activeColor:'#B91C1C' },
   { key:'Critical',     activeBg:'#FEF3C7', activeColor:'#92400E' },
   { key:'Quick Verify', activeBg:'#DBEAFE', activeColor:'#1E40AF' },
   { key:'Aging',        activeBg:'#D1FAE5', activeColor:'#065F46' },
+  { key:'OT',           activeBg:'#F3E8FF', activeColor:'#6B21A8' },
 ];
 
-function hourLabel(h){ const x=h%12||12; return x+(h<12?'a':'p') }
+/* Shifts ordered by start time */
+const SHIFTS = [
+  '7AM–4PM',
+  '10AM–7PM',
+  '12PM–9PM',
+  '2PM–11PM',
+  '3PM–12AM',
+  '6PM–3AM',
+  '7PM–4AM',
+  '10PM–7AM',
+  '10:30PM–7:30AM',
+];
+
+/* Current shift-day key (7AM→7AM window date string, e.g. "2026-05-31") */
+function currentDay(){ return (state.date||'').replace(/\s.*/,'').trim() || 'unset'; }
+
+/* Get or create the per-agent-per-day annotation object */
+function agDay(name){
+  if(!state.tags[name]) state.tags[name]={};
+  const d=currentDay();
+  if(!state.tags[name][d]) state.tags[name][d]={shift:''};
+  return state.tags[name][d];
+}
+
+function hourLabel(h){ const x=h%12||12; return x+(h<12?'A':'P') }
 
 /* ── color: single white → deep purple ramp ──────────────────── */
 function buildStats(){
@@ -365,12 +404,15 @@ function render(){
   thead += `<th class="totcol">Total</th></tr>`;
 
   let body = '';
+  const day = currentDay();
   ags.forEach(a => {
     const sl = (a.status||'').toLowerCase();
     const sdot = `<span class="statusdot ${sl.includes('online')?'online':sl.includes('busy')?'busy':'away'}"></span>`;
-    const agTags = state.tags[a.name]||{};
+    const ad = (state.tags[a.name]||{})[day]||{};
+    const curShift = ad.shift||'';
+    const shiftOpts = SHIFTS.map(s=>`<option value="${esc(s)}"${s===curShift?' selected':''}>${s}</option>`).join('');
     const tagHtml = TAGS.map(t => {
-      const on = !!agTags[t.key];
+      const on = !!ad[t.key];
       return `<span class="atag${on?' on':''}" data-tag-ag="${esc(a.name)}" data-tag-key="${t.key}"
         style="${on?`background:${t.activeBg};color:${t.activeColor}`:''}">
         ${t.key}</span>`;
@@ -381,6 +423,12 @@ function render(){
         <div class="agmeta">
           ${sdot}
           <span style="font-size:11px;color:var(--ink3)">${esc(a.status||'')}</span>
+        </div>
+        <div class="agshift">
+          <select class="shiftsel${curShift?' set':''}" data-shift-ag="${esc(a.name)}">
+            <option value="">— shift —</option>
+            ${shiftOpts}
+          </select>
         </div>
         <div class="agtags">${tagHtml}</div>
       </td>`;
@@ -406,18 +454,27 @@ function render(){
     `<table><thead>${thead}</thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table>`;
   document.querySelectorAll('td.cell').forEach(td=>td.onclick=()=>openModal(td.dataset.ag,td.dataset.h));
 
-  /* tag click delegation — stops propagation so the modal doesn't open */
+  /* tag click delegation */
   document.querySelectorAll('.atag').forEach(el => {
-    el.onclick = e => {
-      e.stopPropagation();
-      toggleTag(el.dataset.tagAg, el.dataset.tagKey);
-    };
+    el.onclick = e => { e.stopPropagation(); toggleTag(el.dataset.tagAg, el.dataset.tagKey); };
+  });
+
+  /* shift selector delegation */
+  document.querySelectorAll('.shiftsel').forEach(sel => {
+    sel.onchange = e => { e.stopPropagation(); setShift(sel.dataset.shiftAg, sel.value); };
+    sel.onclick  = e => e.stopPropagation(); // prevent row click bubbling
   });
 }
 
 function toggleTag(name, key){
-  if(!state.tags[name]) state.tags[name]={};
-  state.tags[name][key] = !state.tags[name][key];
+  const d = agDay(name);
+  d[key] = !d[key];
+  render();
+}
+
+function setShift(name, shift){
+  const d = agDay(name);
+  d.shift = shift;
   render();
 }
 
@@ -468,7 +525,9 @@ function openModal(name, h){
       ${inner}
       <div class="mpills" style="margin-top:14px">
         <span class="mpill" style="background:#F4F2FA;color:#6C647E">${sdot} ${esc(a.status||'—')}</span>
-        ${TAGS.filter(t=>(state.tags[a.name]||{})[t.key]).map(t=>
+        ${(()=>{ const ad=(state.tags[a.name]||{})[currentDay()]||{};
+          return ad.shift?`<span class="mpill" style="background:#EDE9FE;color:#5B21B6">⏱ ${esc(ad.shift)}</span>`:''; })()}
+        ${TAGS.filter(t=>{ const ad=(state.tags[a.name]||{})[currentDay()]||{}; return !!ad[t.key]; }).map(t=>
           `<span class="mpill" style="background:${t.activeBg};color:${t.activeColor}">${t.key}</span>`
         ).join('')}
         ${a.email?`<span class="mpill" style="background:#F3F4F6;color:#9CA3AF;font-weight:400">${esc(a.email)}</span>`:''}
