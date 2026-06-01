@@ -89,6 +89,7 @@
     </div>
     <div class="spacer"></div>
     <label class="btn">⬆ Import CSV/JSON<input id="file" type="file" accept=".csv,.json" hidden></label>
+    <button id="loadConsole" title="Fetch live from the console API (works when embedded on the console origin)">⟳ Load from console</button>
     <button id="expCsv">⬇ CSV</button>
     <button id="expJson">⬇ JSON</button>
     <button id="loadSample">Sample data</button>
@@ -327,11 +328,50 @@ function guessDate(t){const m=t.match(/20\d\d-\d\d-\d\d/);return m?m[0]:'';}
 
 function ingestJSON(text){
   const j=JSON.parse(text);
+  // CONSOLE WIRE SHAPE: cx-ai-ops /api/v1/admin/email/drafts/log (hourly mode).
+  // Detecting hourly_buckets lets the SAME dashboard consume live console data
+  // with zero reshaping — this is the integration seam (see INTEGRATION.md).
+  if(Array.isArray(j.hourly_buckets)) return fromConsoleEmailLog(j);
   state.date=j.date||'';
   state.metric=j.metric||'tickets';
   state.fields=j.fields||['replies','escalated','closed'];
   state.agents=(j.agents||[]).map(a=>({name:a.name,email:a.email||'',duty:normDuty(a.duty),status:a.status||'',
     hours:a.hours||{}, breakdown:a.breakdown||{}}));
+}
+
+/* ---- console adapter: /email-drafts/log hourly_buckets -> canonical state ---- */
+function fromConsoleEmailLog(j){
+  const map={};
+  (j.hourly_buckets||[]).forEach(b=>{
+    (b.agents||[]).forEach(a=>{
+      const key=a.display_name||a.agent_id||'?';
+      const ag = map[key] || (map[key]={
+        name:key, email:a.agent_id||'',
+        // Duty from the console queue field (active_queue/duty), NOT a roster.
+        duty:normDuty(a.duty||a.active_queue||a.queue||''),
+        status:a.status||'', hours:{}, breakdown:{}});
+      const t = a.total!=null ? a.total : ((a.replies||0)+(a.escalated||0)+(a.closed||0));
+      ag.hours[b.hour]=(ag.hours[b.hour]||0)+t;
+      ag.breakdown[b.hour]={replies:a.replies??null,escalated:a.escalated??null,closed:a.closed??null};
+    });
+  });
+  state.agents=Object.values(map);
+  state.date=j.date||'';
+  state.metric='tickets';
+  state.fields=['replies','escalated','closed'];
+}
+
+/* ---- live fetch from the console (works when embedded on the console origin) ---- */
+async function loadFromConsole(date){
+  // Same base + credentials as the console's own api.ts so the auth cookie travels.
+  const base = (window.HEATMAP_API_BASE || (window.location.origin + '/api/v1/admin/email'));
+  const url = base.replace(/\/$/,'') + '/drafts/log' + (date?`?date=${encodeURIComponent(date)}`:'');
+  const r = await fetch(url,{credentials:'include',headers:{Accept:'application/json'}});
+  if(!r.ok) throw new Error('HTTP '+r.status+' from '+url);
+  const j = await r.json();
+  ingestJSON(JSON.stringify(j));
+  SAMPLE_FLAG.ref=null;
+  render();
 }
 
 /* ---------- export ---------- */
@@ -371,7 +411,22 @@ document.getElementById('sort').onchange=e=>{state.sort=e.target.value;render();
 document.getElementById('expCsv').onclick=exportCSV;
 document.getElementById('expJson').onclick=exportJSON;
 document.getElementById('loadSample').onclick=()=>{loadSample();render();};
+document.getElementById('loadConsole').onclick=()=>{
+  const d=new URLSearchParams(location.search).get('date')||state.date.replace(/ .*/,'')||'';
+  loadFromConsole(d).catch(e=>alert('Could not load from console: '+e.message+
+    '\n\nThis button works when the dashboard is embedded on the console origin '+
+    '(same auth cookie). Standalone, import a CSV/JSON instead.'));
+};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+/* Deep-link: ?source=console[&date=YYYY-MM-DD] auto-loads live data on open
+   (used when the console embeds/links the dashboard). Falls back to sample. */
+(function initSource(){
+  const q=new URLSearchParams(location.search);
+  if(q.get('source')==='console'){
+    loadFromConsole(q.get('date')||'').catch(()=>{loadSample();render();});
+  }
+})();
 
 /* ============================================================
    SAMPLE DATA — so the dashboard renders immediately.
