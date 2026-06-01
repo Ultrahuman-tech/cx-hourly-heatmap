@@ -107,7 +107,7 @@ thead th.totcol { z-index:8 }
 /* agent column */
 .agcol {
   position:sticky; left:0; z-index:6; background:var(--bg);
-  text-align:left; padding:6px 14px 6px 4px; min-width:186px;
+  text-align:left; padding:6px 14px 6px 4px; min-width:210px;
 }
 /* total column */
 .totcol {
@@ -132,19 +132,22 @@ td.daybreak, th.daybreak { border-left:2px dashed rgba(91,33,182,.2) !important 
 /* agent meta */
 .agname { font-size:13px; font-weight:600; color:var(--ink); line-height:1.3 }
 .agmeta { display:flex; align-items:center; gap:5px; margin-top:2px }
-.badge  {
-  font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:.01em
-}
-.badge.Email     { background:#EDE9FE; color:#5B21B6 }
-.badge.Deferred  { background:#F0FDF4; color:#166534 }
-.badge.Both      { background:#FFF7ED; color:#9A3412 }
-.badge.Unknown   { background:#F3F4F6; color:#6B7280 }
 .statusdot {
   width:6px; height:6px; border-radius:50%; display:inline-block; flex-shrink:0
 }
 .statusdot.online { background:#22C55E }
 .statusdot.busy   { background:#F59E0B }
 .statusdot.away   { background:#D1D5DB }
+
+/* agent selectable tags */
+.agtags { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px }
+.atag {
+  font-size:10px; font-weight:600; padding:2px 7px; border-radius:999px;
+  cursor:pointer; user-select:none; transition:.12s;
+  background:#EDEBF5; color:#B0AAC0; letter-spacing:.01em;
+}
+.atag:hover { background:#DDD8F0; color:#6C647E }
+.atag.on    { box-shadow:0 1px 3px rgba(0,0,0,.12) }
 
 /* footer row */
 tfoot td { padding:6px 3px; font-size:11.5px; font-weight:700; color:var(--ink2) }
@@ -190,8 +193,8 @@ tfoot .agcol { color:var(--ink3); font-weight:500 }
 .mtable td b { font-weight:700 }
 .mpills { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px }
 .mpill {
-  font-size:11.5px; padding:3px 10px; border-radius:999px;
-  background:var(--purple-l); color:var(--purple); font-weight:600
+  font-size:11px; padding:2.5px 9px; border-radius:999px;
+  font-weight:600; letter-spacing:.01em
 }
 
 /* ── drop zone ───────────────────────────────────────────────── */
@@ -257,7 +260,16 @@ tfoot .agcol { color:var(--ink3); font-weight:500 }
 const HOURS_CAL   = [...Array(24).keys()];
 const HOURS_SHIFT = [...HOURS_CAL.slice(7), ...HOURS_CAL.slice(0,7)];
 const state = { date:'', agents:[], order:'shift', duty:'all', sort:'total',
-                metric:'tickets', fields:['replies','escalated','closed'] };
+                metric:'tickets', fields:['replies','escalated','closed'],
+                tags:{} }; // { agentName: { tagKey: bool } } — persists across re-renders
+
+/* Selectable admin tags — colour shown when active, faded when not */
+const TAGS = [
+  { key:'Escalations',  activeBg:'#FEE2E2', activeColor:'#B91C1C' },
+  { key:'Critical',     activeBg:'#FEF3C7', activeColor:'#92400E' },
+  { key:'Quick Verify', activeBg:'#DBEAFE', activeColor:'#1E40AF' },
+  { key:'Aging',        activeBg:'#D1FAE5', activeColor:'#065F46' },
+];
 
 function hourLabel(h){ const x=h%12||12; return x+(h<12?'a':'p') }
 
@@ -354,15 +366,23 @@ function render(){
 
   let body = '';
   ags.forEach(a => {
-    const sdot = `<span class="statusdot ${(a.status||'').toLowerCase().includes('online')?'online':(a.status||'').toLowerCase().includes('busy')?'busy':'away'}"></span>`;
+    const sl = (a.status||'').toLowerCase();
+    const sdot = `<span class="statusdot ${sl.includes('online')?'online':sl.includes('busy')?'busy':'away'}"></span>`;
+    const agTags = state.tags[a.name]||{};
+    const tagHtml = TAGS.map(t => {
+      const on = !!agTags[t.key];
+      return `<span class="atag${on?' on':''}" data-tag-ag="${esc(a.name)}" data-tag-key="${t.key}"
+        style="${on?`background:${t.activeBg};color:${t.activeColor}`:''}">
+        ${t.key}</span>`;
+    }).join('');
     body += `<tr>
       <td class="agcol">
         <div class="agname">${esc(a.name)}</div>
         <div class="agmeta">
-          <span class="badge ${a.duty||'Unknown'}">${a.duty||'Unknown'}</span>
           ${sdot}
           <span style="font-size:11px;color:var(--ink3)">${esc(a.status||'')}</span>
         </div>
+        <div class="agtags">${tagHtml}</div>
       </td>`;
     order.forEach(h => {
       const v = a.hours[h]||0;
@@ -385,6 +405,20 @@ function render(){
   document.getElementById('grid').innerHTML =
     `<table><thead>${thead}</thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table>`;
   document.querySelectorAll('td.cell').forEach(td=>td.onclick=()=>openModal(td.dataset.ag,td.dataset.h));
+
+  /* tag click delegation — stops propagation so the modal doesn't open */
+  document.querySelectorAll('.atag').forEach(el => {
+    el.onclick = e => {
+      e.stopPropagation();
+      toggleTag(el.dataset.tagAg, el.dataset.tagKey);
+    };
+  });
+}
+
+function toggleTag(name, key){
+  if(!state.tags[name]) state.tags[name]={};
+  state.tags[name][key] = !state.tags[name][key];
+  render();
 }
 
 function esc(s){
@@ -433,9 +467,11 @@ function openModal(name, h){
     <div class="mbody">
       ${inner}
       <div class="mpills" style="margin-top:14px">
-        <span class="mpill badge ${a.duty||'Unknown'}" style="font-size:11px">${a.duty||'Unknown'}</span>
-        <span class="mpill" style="background:#F3F4F6;color:#374151">${sdot} ${esc(a.status||'—')}</span>
-        ${a.email?`<span class="mpill" style="background:#F3F4F6;color:#6B7280;font-weight:400">${esc(a.email)}</span>`:''}
+        <span class="mpill" style="background:#F4F2FA;color:#6C647E">${sdot} ${esc(a.status||'—')}</span>
+        ${TAGS.filter(t=>(state.tags[a.name]||{})[t.key]).map(t=>
+          `<span class="mpill" style="background:${t.activeBg};color:${t.activeColor}">${t.key}</span>`
+        ).join('')}
+        ${a.email?`<span class="mpill" style="background:#F3F4F6;color:#9CA3AF;font-weight:400">${esc(a.email)}</span>`:''}
       </div>
     </div>`;
   document.getElementById('scrim').classList.add('show');
