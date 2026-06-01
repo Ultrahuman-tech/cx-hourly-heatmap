@@ -26,7 +26,7 @@ body { font: 13.5px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helve
 header {
   position:sticky; top:0; z-index:40;
   background:rgba(255,255,255,.88); backdrop-filter:blur(14px);
-  padding:14px 24px 10px; display:flex; flex-direction:column; gap:10px;
+  padding:10px 20px 8px; display:flex; flex-direction:column; gap:7px;
   box-shadow:0 1px 0 rgba(19,12,34,.06);
 }
 .hrow { display:flex; align-items:center; gap:10px; flex-wrap:wrap }
@@ -67,91 +67,142 @@ select { padding:7px 10px; color:var(--ink2) }
           background:linear-gradient(90deg,#EDE9FE,#8B5CF6,#3B0764) }
 
 /* ── summary cards ───────────────────────────────────────────── */
-.cards { display:flex; gap:10px; flex-wrap:wrap; padding:16px 24px 4px }
+.cards { display:flex; gap:8px; flex-wrap:wrap; padding:10px 20px 2px }
 .card  {
-  background:var(--surface); border-radius:16px; padding:14px 18px;
-  min-width:110px; box-shadow:var(--sh-sm); flex:1; max-width:180px;
+  background:var(--surface); border-radius:12px; padding:10px 14px;
+  min-width:90px; box-shadow:var(--sh-sm); flex:1; max-width:160px;
 }
 .card .k {
-  font-size:10.5px; font-weight:600; letter-spacing:.06em;
-  text-transform:uppercase; color:var(--ink3); margin-bottom:5px;
-  display:flex; align-items:center; gap:5px
+  font-size:9.5px; font-weight:600; letter-spacing:.07em;
+  text-transform:uppercase; color:var(--ink3); margin-bottom:3px;
+  display:flex; align-items:center; gap:4px
 }
-.card .v { font-size:26px; font-weight:720; letter-spacing:-.03em; color:var(--ink) }
-.card .v small { font-size:13px; font-weight:500; color:var(--ink3); margin-left:2px }
-.dot { width:7px; height:7px; border-radius:50%; display:inline-block }
+.card .v { font-size:22px; font-weight:720; letter-spacing:-.03em; color:var(--ink) }
+.card .v small { font-size:12px; font-weight:500; color:var(--ink3); margin-left:1px }
+.dot { width:6px; height:6px; border-radius:50%; display:inline-block }
 
 /* ── status hint ─────────────────────────────────────────────── */
-.hint { font-size:11.5px; color:var(--ink3); padding:4px 24px 0 }
+.hint { font-size:11px; color:var(--ink3); padding:3px 20px 0 }
 
 /* ── table wrap ──────────────────────────────────────────────── */
-.wrap { padding:12px 24px 60px; overflow:auto }
+.wrap { padding:8px 20px 60px; overflow:auto }
 
 /* ── table ───────────────────────────────────────────────────── */
-table {
-  border-collapse:separate;
-  border-spacing:3px;
-  width:100%;
-}
+table { border-collapse:separate; border-spacing:2px; width:100% }
 th, td { text-align:center; font-variant-numeric:tabular-nums }
 
 /* header row */
 thead th {
   position:sticky; top:0; z-index:5; background:var(--bg);
-  font-size:10.5px; font-weight:600; color:var(--ink3);
-  padding:4px 2px 8px; white-space:nowrap;
+  font-size:10px; font-weight:600; color:var(--ink3);
+  padding:3px 1px 6px; white-space:nowrap;
 }
 thead th.agcol { z-index:8 }
 thead th.totcol { z-index:8 }
+thead th.hourcol {
+  cursor:pointer; border-radius:5px; transition:.1s;
+}
+thead th.hourcol:hover { background:#DDD8F0; color:var(--purple) }
 
 /* agent column */
 .agcol {
   position:sticky; left:0; z-index:6; background:var(--bg);
-  text-align:left; padding:6px 14px 6px 4px; min-width:210px;
+  text-align:left; padding:5px 10px 5px 2px; min-width:200px;
 }
 /* total column */
 .totcol {
   position:sticky; right:0; z-index:6; background:var(--bg);
-  min-width:58px; font-size:13px; font-weight:700; color:var(--ink);
+  min-width:46px; font-size:12px; font-weight:700; color:var(--ink);
 }
 
 /* cells */
 td.cell {
-  cursor:pointer; height:36px; min-width:36px;
-  border-radius:6px; font-size:12px; font-weight:600;
+  cursor:pointer; height:30px; min-width:30px;
+  border-radius:5px; font-size:11px; font-weight:600;
   position:relative; transition:transform .1s, box-shadow .1s;
 }
-td.cell:hover { transform:scale(1.12); z-index:3; box-shadow:0 4px 12px rgba(59,7,100,.22) }
-td.cell.zero { opacity:.55 }
-td.tot  { border-radius:8px }
-td.foot { font-size:11.5px; font-weight:600; color:var(--ink2) }
+td.cell:hover { transform:scale(1.15); z-index:3; box-shadow:0 3px 10px rgba(59,7,100,.25) }
+td.cell.zero { opacity:.45 }
+td.tot  { border-radius:6px }
+td.foot { font-size:10.5px; font-weight:600; color:var(--ink2) }
 
 /* midnight dashed separator — shift mode */
-td.daybreak, th.daybreak { border-left:2px dashed rgba(91,33,182,.2) !important }
+td.daybreak, th.daybreak { border-left:2px dashed rgba(91,33,182,.18) !important }
 
-/* agent meta */
-.agname { font-size:13px; font-weight:600; color:var(--ink); line-height:1.3 }
-.agmeta { display:flex; align-items:center; gap:5px; margin-top:2px }
-.statusdot {
-  width:6px; height:6px; border-radius:50%; display:inline-block; flex-shrink:0
-}
+/* agent meta — all inline on one line */
+.agname { font-size:12.5px; font-weight:650; color:var(--ink); line-height:1.2 }
+.agmeta { display:flex; align-items:center; gap:4px; margin-top:1px }
+.statusdot { width:5px; height:5px; border-radius:50%; display:inline-block; flex-shrink:0 }
 .statusdot.online { background:#22C55E }
 .statusdot.busy   { background:#F59E0B }
 .statusdot.away   { background:#D1D5DB }
 
+/* shift + OT row */
+.agselectors { display:flex; align-items:center; gap:4px; margin-top:4px; flex-wrap:wrap }
+.shiftsel, .ottime {
+  font:inherit; font-size:10px; font-weight:600;
+  padding:2px 6px; border-radius:6px; border:none; cursor:pointer;
+  background:#EDEBF5; color:#9B93B3; transition:.12s;
+}
+.shiftsel {
+  appearance:none; -webkit-appearance:none; padding-right:18px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23B0AAC0'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 5px center;
+  max-width:110px;
+}
+.shiftsel:hover, .ottime:hover { background:#DDD8F0; color:#5B21B6 }
+.shiftsel.set { background:#EDE9FE; color:#5B21B6 }
+.otlabel { font-size:9.5px; font-weight:600; color:var(--ink3); letter-spacing:.04em }
+.ottime  { width:58px; color:#9B93B3 }
+.ottime.set { background:#EDE9FE; color:#5B21B6 }
+.otsep  { font-size:9px; color:var(--ink3) }
+
 /* agent selectable tags */
-.agtags { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px }
+.agtags { display:flex; flex-wrap:wrap; gap:3px; margin-top:4px }
 .atag {
-  font-size:10px; font-weight:600; padding:2px 7px; border-radius:999px;
+  font-size:9.5px; font-weight:600; padding:1.5px 6px; border-radius:999px;
   cursor:pointer; user-select:none; transition:.12s;
-  background:#EDEBF5; color:#B0AAC0; letter-spacing:.01em;
+  background:#EDEBF5; color:#C0BAD0; letter-spacing:.01em;
 }
 .atag:hover { background:#DDD8F0; color:#6C647E }
-.atag.on    { box-shadow:0 1px 3px rgba(0,0,0,.12) }
+.atag.on    { box-shadow:0 1px 3px rgba(0,0,0,.1) }
 
 /* footer row */
-tfoot td { padding:6px 3px; font-size:11.5px; font-weight:700; color:var(--ink2) }
+tfoot td { padding:5px 2px; font-size:10.5px; font-weight:600; color:var(--ink2) }
 tfoot .agcol { color:var(--ink3); font-weight:500 }
+
+/* ── hour popup panel ────────────────────────────────────────── */
+#hour-panel {
+  position:fixed; z-index:55; display:none;
+  background:var(--surface); border-radius:16px;
+  box-shadow:var(--sh-xl); min-width:200px; max-width:260px;
+  max-height:70vh; overflow:hidden;
+  animation:popIn .16s cubic-bezier(.34,1.4,.64,1) both;
+}
+#hour-panel.show { display:block }
+.hp-head {
+  padding:12px 14px 8px; display:flex; justify-content:space-between; align-items:center;
+  border-bottom:1px solid #F0EDF8;
+}
+.hp-title { font-size:13px; font-weight:700; color:var(--ink) }
+.hp-sub   { font-size:11px; color:var(--ink3); margin-top:1px }
+.hp-close {
+  width:22px; height:22px; border-radius:50%; background:#F4F2FA;
+  color:var(--ink3); border:none; cursor:pointer; font-size:11px;
+  display:flex; align-items:center; justify-content:center; box-shadow:none; flex-shrink:0
+}
+.hp-close:hover { background:#EDE9FE; color:var(--purple) }
+.hp-list  { overflow-y:auto; max-height:calc(70vh - 60px); padding:6px 0 8px }
+.hp-row   {
+  display:flex; align-items:center; gap:8px; padding:5px 14px;
+  transition:.08s;
+}
+.hp-row:hover { background:#FAF8FF }
+.hp-rank  { font-size:10px; font-weight:700; color:var(--ink3); width:14px; text-align:right; flex-shrink:0 }
+.hp-name  { font-size:12px; font-weight:600; color:var(--ink); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.hp-bar-wrap { width:50px; height:5px; background:#EDE9FE; border-radius:99px; flex-shrink:0 }
+.hp-bar   { height:5px; border-radius:99px; background:#7C3AED }
+.hp-n     { font-size:12px; font-weight:700; color:var(--ink); min-width:20px; text-align:right; flex-shrink:0 }
 
 /* ── modal ───────────────────────────────────────────────────── */
 .scrim {
@@ -266,6 +317,13 @@ tfoot .agcol { color:var(--ink3); font-weight:500 }
 
 <div class="scrim" id="scrim">
   <div class="modal" id="modal"></div>
+</div>
+<div id="hour-panel">
+  <div class="hp-head">
+    <div><div class="hp-title" id="hp-title"></div><div class="hp-sub" id="hp-sub"></div></div>
+    <button class="hp-close" id="hp-close">✕</button>
+  </div>
+  <div class="hp-list" id="hp-list"></div>
 </div>
 <div class="drop" id="drop">Drop CSV or JSON to load</div>
 
@@ -396,10 +454,9 @@ function render(){
     (state.agents===SAMPLE_FLAG.ref ? '  ⚠ Showing sample data — import a CSV or JSON to replace.' : '');
 
   /* table */
-  let thead = `<tr>
-    <th class="agcol">Agent</th>`;
+  let thead = `<tr><th class="agcol">Agent</th>`;
   order.forEach(h => {
-    thead += `<th class="${state.order==='shift'&&h===0?'daybreak':''}">${hourLabel(h)}</th>`;
+    thead += `<th class="hourcol${state.order==='shift'&&h===0?' daybreak':''}" data-h="${h}">${hourLabel(h)}</th>`;
   });
   thead += `<th class="totcol">Total</th></tr>`;
 
@@ -410,6 +467,7 @@ function render(){
     const sdot = `<span class="statusdot ${sl.includes('online')?'online':sl.includes('busy')?'busy':'away'}"></span>`;
     const ad = (state.tags[a.name]||{})[day]||{};
     const curShift = ad.shift||'';
+    const otStart = ad.otStart||''; const otEnd = ad.otEnd||'';
     const shiftOpts = SHIFTS.map(s=>`<option value="${esc(s)}"${s===curShift?' selected':''}>${s}</option>`).join('');
     const tagHtml = TAGS.map(t => {
       const on = !!ad[t.key];
@@ -420,15 +478,17 @@ function render(){
     body += `<tr>
       <td class="agcol">
         <div class="agname">${esc(a.name)}</div>
-        <div class="agmeta">
-          ${sdot}
-          <span style="font-size:11px;color:var(--ink3)">${esc(a.status||'')}</span>
-        </div>
-        <div class="agshift">
+        <div class="agmeta">${sdot}<span style="font-size:10.5px;color:var(--ink3)">${esc(a.status||'')}</span></div>
+        <div class="agselectors">
           <select class="shiftsel${curShift?' set':''}" data-shift-ag="${esc(a.name)}">
-            <option value="">— shift —</option>
-            ${shiftOpts}
+            <option value="">— shift —</option>${shiftOpts}
           </select>
+          <span class="otlabel">OT</span>
+          <input class="ottime${otStart?' set':''}" type="time" value="${otStart}"
+            data-ot-ag="${esc(a.name)}" data-ot-field="otStart" title="OT start">
+          <span class="otsep">–</span>
+          <input class="ottime${otEnd?' set':''}" type="time" value="${otEnd}"
+            data-ot-ag="${esc(a.name)}" data-ot-field="otEnd" title="OT end">
         </div>
         <div class="agtags">${tagHtml}</div>
       </td>`;
@@ -462,7 +522,18 @@ function render(){
   /* shift selector delegation */
   document.querySelectorAll('.shiftsel').forEach(sel => {
     sel.onchange = e => { e.stopPropagation(); setShift(sel.dataset.shiftAg, sel.value); };
-    sel.onclick  = e => e.stopPropagation(); // prevent row click bubbling
+    sel.onclick  = e => e.stopPropagation();
+  });
+
+  /* OT time delegation */
+  document.querySelectorAll('.ottime').forEach(inp => {
+    inp.onchange = e => { e.stopPropagation(); setOT(inp.dataset.otAg, inp.dataset.otField, inp.value); };
+    inp.onclick  = e => e.stopPropagation();
+  });
+
+  /* hour header click → popup */
+  document.querySelectorAll('thead th.hourcol').forEach(th => {
+    th.onclick = e => openHourPanel(+th.dataset.h, e);
   });
 }
 
@@ -473,10 +544,58 @@ function toggleTag(name, key){
 }
 
 function setShift(name, shift){
-  const d = agDay(name);
-  d.shift = shift;
+  agDay(name).shift = shift;
   render();
 }
+
+function setOT(name, field, val){
+  agDay(name)[field] = val;
+  // re-style input in place (avoid full re-render on every keystroke)
+  document.querySelectorAll(`.ottime[data-ot-ag="${CSS.escape(name)}"][data-ot-field="${field}"]`)
+    .forEach(el => el.classList.toggle('set', !!val));
+}
+
+/* ── hour popup ──────────────────────────────────────────────── */
+function openHourPanel(h, e){
+  const rows = state.agents
+    .map(a => ({ name:a.name, n:a.hours[h]||0 }))
+    .filter(r => r.n > 0)
+    .sort((a,b) => b.n - a.n);
+
+  const max = rows[0]?.n || 1;
+  const label = `${hourLabel(h)}–${hourLabel((h+1)%24)}`;
+  const total = rows.reduce((s,r)=>s+r.n, 0);
+
+  document.getElementById('hp-title').textContent = label;
+  document.getElementById('hp-sub').textContent   = `${rows.length} agent${rows.length!==1?'s':''} · ${total} tickets`;
+  document.getElementById('hp-list').innerHTML    = rows.map((r,i) => `
+    <div class="hp-row">
+      <span class="hp-rank">${i+1}</span>
+      <span class="hp-name">${esc(r.name)}</span>
+      <div class="hp-bar-wrap"><div class="hp-bar" style="width:${Math.round(r.n/max*100)}%"></div></div>
+      <span class="hp-n">${r.n}</span>
+    </div>`).join('') || `<div style="padding:12px 14px;font-size:12px;color:var(--ink3)">No activity this hour</div>`;
+
+  const panel = document.getElementById('hour-panel');
+  panel.classList.add('show');
+
+  // Position: below the clicked header, clamped to viewport
+  const rect = e.target.getBoundingClientRect();
+  const pw = 240, ph = Math.min(rows.length * 32 + 70, window.innerHeight * 0.7);
+  let left = rect.left + rect.width/2 - pw/2;
+  let top  = rect.bottom + 6;
+  left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+  top  = Math.min(top, window.innerHeight - ph - 8);
+  panel.style.cssText = `display:block; left:${left}px; top:${top}px; width:${pw}px`;
+}
+
+function closeHourPanel(){ document.getElementById('hour-panel').classList.remove('show'); }
+document.getElementById('hp-close').onclick = closeHourPanel;
+document.addEventListener('click', e => {
+  const p = document.getElementById('hour-panel');
+  if(p.classList.contains('show') && !p.contains(e.target) && !e.target.closest('th.hourcol'))
+    closeHourPanel();
+});
 
 function esc(s){
   return (s==null?'':String(s)).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
@@ -526,7 +645,10 @@ function openModal(name, h){
       <div class="mpills" style="margin-top:14px">
         <span class="mpill" style="background:#F4F2FA;color:#6C647E">${sdot} ${esc(a.status||'—')}</span>
         ${(()=>{ const ad=(state.tags[a.name]||{})[currentDay()]||{};
-          return ad.shift?`<span class="mpill" style="background:#EDE9FE;color:#5B21B6">⏱ ${esc(ad.shift)}</span>`:''; })()}
+          const pills = [];
+          if(ad.shift) pills.push(`<span class="mpill" style="background:#EDE9FE;color:#5B21B6">⏱ ${esc(ad.shift)}</span>`);
+          if(ad.otStart||ad.otEnd) pills.push(`<span class="mpill" style="background:#F3E8FF;color:#6B21A8">OT ${esc(ad.otStart||'?')}–${esc(ad.otEnd||'?')}</span>`);
+          return pills.join(''); })()}
         ${TAGS.filter(t=>{ const ad=(state.tags[a.name]||{})[currentDay()]||{}; return !!ad[t.key]; }).map(t=>
           `<span class="mpill" style="background:${t.activeBg};color:${t.activeColor}">${t.key}</span>`
         ).join('')}
