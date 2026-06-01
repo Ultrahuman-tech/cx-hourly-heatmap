@@ -5,98 +5,221 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CX Hourly Heatmap</title>
 <style>
-  :root{
-    --bg:#f6f7f9; --panel:#fff; --ink:#1f2430; --muted:#6b7280; --line:#e6e8ec;
-    --email:#2563eb; --deferred:#7c3aed; --chip:#eef2ff;
-    --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.1);
-  }
-  *{box-sizing:border-box}
-  body{margin:0;font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-       background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
-  header.top{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);
-       border-bottom:1px solid var(--line);padding:14px 20px}
-  .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  h1{font-size:18px;margin:0;font-weight:650;letter-spacing:-.01em}
-  .sub{color:var(--muted);font-size:12.5px}
-  .spacer{flex:1}
-  button,label.btn,select{font:inherit;border:1px solid var(--line);background:#fff;color:var(--ink);
-       padding:7px 12px;border-radius:9px;cursor:pointer;box-shadow:var(--shadow);transition:.12s}
-  button:hover,label.btn:hover{border-color:#cdd2da;background:#fbfbfc}
-  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
-  select{padding:7px 10px}
-  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;box-shadow:var(--shadow)}
-  .seg button{border:0;border-radius:0;box-shadow:none;padding:7px 12px;background:#fff}
-  .seg button.on{background:var(--ink);color:#fff}
-  .seg button+button{border-left:1px solid var(--line)}
-  .cards{display:flex;gap:12px;flex-wrap:wrap;padding:16px 20px 4px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 16px;min-width:120px;box-shadow:var(--shadow)}
-  .card .k{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-  .card .v{font-size:24px;font-weight:680;letter-spacing:-.02em;margin-top:3px}
-  .card .v small{font-size:13px;font-weight:500;color:var(--muted)}
-  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
-  .wrap{padding:14px 20px 60px;overflow:auto}
-  table{border-collapse:separate;border-spacing:0;width:100%;background:var(--panel);border:1px solid var(--line);
-        border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
-  th,td{padding:0;text-align:center;font-variant-numeric:tabular-nums}
-  thead th{position:sticky;top:0;background:#fafbfc;z-index:5;font-weight:600;font-size:11px;color:var(--muted);
-       padding:9px 4px;border-bottom:1px solid var(--line);white-space:nowrap}
-  .agcol{position:sticky;left:0;background:var(--panel);z-index:6;text-align:left;padding:8px 12px;min-width:190px;
-       border-right:1px solid var(--line)}
-  thead .agcol{z-index:8;background:#fafbfc}
-  .totcol{position:sticky;right:0;background:var(--panel);z-index:6;border-left:1px solid var(--line);min-width:74px}
-  thead .totcol{z-index:8;background:#fafbfc}
-  tbody tr{border-top:1px solid #f0f1f3}
-  tbody tr:hover .agcol{background:#f8f9fb}
-  .agname{font-weight:600}
-  .agmeta{font-size:11.5px;color:var(--muted);margin-top:1px;display:flex;align-items:center;gap:6px}
-  .badge{font-size:10.5px;font-weight:600;padding:1.5px 7px;border-radius:999px;border:1px solid transparent}
-  .badge.Email{background:#eaf1ff;color:#1d4ed8;border-color:#dbe6ff}
-  .badge.Deferred{background:#f3ecff;color:#6d28d9;border-color:#e8defb}
-  .badge.Both{background:#e7f7ee;color:#067647;border-color:#cdebd9}
-  .badge.Unknown{background:#f1f2f4;color:#6b7280}
-  td.cell{cursor:pointer;height:38px;min-width:42px;font-weight:600;color:#0b1220;position:relative;border-right:1px solid #fafafa}
-  td.cell.zero{color:#c7ccd4;font-weight:500}
-  td.cell:hover{outline:2px solid var(--ink);outline-offset:-2px;z-index:2}
-  td.tot{font-weight:750;background:#fbfbfd}
-  .daybreak{border-left:2px dashed #d6dae1 !important}
-  tfoot td{font-weight:700;background:#fafbfc;border-top:2px solid var(--line);padding:8px 4px;font-size:12px}
-  tfoot .agcol{background:#fafbfc}
-  /* modal */
-  .scrim{position:fixed;inset:0;background:rgba(15,18,25,.42);display:none;align-items:center;justify-content:center;z-index:50}
-  .scrim.show{display:flex}
-  .modal{background:#fff;border-radius:16px;min-width:340px;max-width:92vw;max-height:86vh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,.28)}
-  .modal h3{margin:0;padding:16px 18px;border-bottom:1px solid var(--line);font-size:15px}
-  .modal .body{padding:14px 18px 18px}
-  .modal table{box-shadow:none;border:1px solid var(--line)}
-  .modal td,.modal th{padding:7px 12px;text-align:left;border-bottom:1px solid #f0f1f3}
-  .x{float:right;cursor:pointer;color:var(--muted);font-weight:700}
-  .drop{position:fixed;inset:0;background:rgba(37,99,235,.08);border:3px dashed var(--email);z-index:60;
-        display:none;align-items:center;justify-content:center;font-size:20px;color:#1d4ed8;font-weight:700}
-  .drop.show{display:flex}
-  .hint{color:var(--muted);font-size:12px;padding:6px 20px 0}
-  .legend{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted)}
-  .legend .scale{width:130px;height:10px;border-radius:6px;
-     background:linear-gradient(90deg,#fde2e7,#f6f7f9 48%,#cfe0ff,#2563eb)}
-  code{background:#f1f2f4;padding:1px 5px;border-radius:5px;font-size:12px}
+/* ── tokens ─────────────────────────────────────────────────── */
+:root {
+  --bg:      #F4F2FA;
+  --surface: #FFFFFF;
+  --ink:     #130C22;
+  --ink2:    #6C647E;
+  --ink3:    #B0AAC0;
+  --purple:  #5B21B6;
+  --purple-l:#EDE9FE;
+  --sh-sm:   0 1px 3px rgba(19,12,34,.06), 0 1px 2px rgba(19,12,34,.04);
+  --sh-md:   0 4px 20px rgba(19,12,34,.08), 0 1px 4px rgba(19,12,34,.05);
+  --sh-xl:   0 24px 64px rgba(19,12,34,.18), 0 4px 16px rgba(19,12,34,.08);
+}
+*  { box-sizing:border-box; margin:0; padding:0 }
+body { font: 13.5px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased }
+
+/* ── header ─────────────────────────────────────────────────── */
+header {
+  position:sticky; top:0; z-index:40;
+  background:rgba(255,255,255,.88); backdrop-filter:blur(14px);
+  padding:14px 24px 10px; display:flex; flex-direction:column; gap:10px;
+  box-shadow:0 1px 0 rgba(19,12,34,.06);
+}
+.hrow { display:flex; align-items:center; gap:10px; flex-wrap:wrap }
+h1 { font-size:17px; font-weight:700; letter-spacing:-.02em; color:var(--ink) }
+.datechip {
+  font-size:11.5px; font-weight:600; padding:3px 10px;
+  background:var(--purple-l); color:var(--purple); border-radius:999px
+}
+.spacer { flex:1 }
+
+/* buttons */
+button, label.btn, select {
+  font:inherit; cursor:pointer; transition:.15s;
+  background:var(--surface); color:var(--ink);
+  border:none; border-radius:10px;
+  padding:7px 13px; font-size:12.5px; font-weight:500;
+  box-shadow:var(--sh-sm);
+}
+button:hover, label.btn:hover { background:#F9F7FF; box-shadow:var(--sh-md) }
+button:active { transform:scale(.97) }
+select { padding:7px 10px; color:var(--ink2) }
+
+/* segment controls */
+.seg {
+  display:inline-flex; border-radius:10px; overflow:hidden;
+  background:var(--surface); box-shadow:var(--sh-sm); gap:1px; padding:3px;
+}
+.seg button {
+  border-radius:7px; box-shadow:none; padding:5px 12px;
+  font-size:12px; color:var(--ink2); background:transparent
+}
+.seg button.on { background:var(--ink); color:#fff; box-shadow:var(--sh-sm) }
+.seg button:hover:not(.on) { background:#F0EDF8; color:var(--ink) }
+
+/* legend */
+.legend { display:inline-flex; align-items:center; gap:8px; font-size:11.5px; color:var(--ink3) }
+.scale  { width:100px; height:8px; border-radius:99px;
+          background:linear-gradient(90deg,#EDE9FE,#8B5CF6,#3B0764) }
+
+/* ── summary cards ───────────────────────────────────────────── */
+.cards { display:flex; gap:10px; flex-wrap:wrap; padding:16px 24px 4px }
+.card  {
+  background:var(--surface); border-radius:16px; padding:14px 18px;
+  min-width:110px; box-shadow:var(--sh-sm); flex:1; max-width:180px;
+}
+.card .k {
+  font-size:10.5px; font-weight:600; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink3); margin-bottom:5px;
+  display:flex; align-items:center; gap:5px
+}
+.card .v { font-size:26px; font-weight:720; letter-spacing:-.03em; color:var(--ink) }
+.card .v small { font-size:13px; font-weight:500; color:var(--ink3); margin-left:2px }
+.dot { width:7px; height:7px; border-radius:50%; display:inline-block }
+
+/* ── status hint ─────────────────────────────────────────────── */
+.hint { font-size:11.5px; color:var(--ink3); padding:4px 24px 0 }
+
+/* ── table wrap ──────────────────────────────────────────────── */
+.wrap { padding:12px 24px 60px; overflow:auto }
+
+/* ── table ───────────────────────────────────────────────────── */
+table {
+  border-collapse:separate;
+  border-spacing:3px;
+  width:100%;
+}
+th, td { text-align:center; font-variant-numeric:tabular-nums }
+
+/* header row */
+thead th {
+  position:sticky; top:0; z-index:5; background:var(--bg);
+  font-size:10.5px; font-weight:600; color:var(--ink3);
+  padding:4px 2px 8px; white-space:nowrap;
+}
+thead th.agcol { z-index:8 }
+thead th.totcol { z-index:8 }
+
+/* agent column */
+.agcol {
+  position:sticky; left:0; z-index:6; background:var(--bg);
+  text-align:left; padding:6px 14px 6px 4px; min-width:186px;
+}
+/* total column */
+.totcol {
+  position:sticky; right:0; z-index:6; background:var(--bg);
+  min-width:58px; font-size:13px; font-weight:700; color:var(--ink);
+}
+
+/* cells */
+td.cell {
+  cursor:pointer; height:36px; min-width:36px;
+  border-radius:6px; font-size:12px; font-weight:600;
+  position:relative; transition:transform .1s, box-shadow .1s;
+}
+td.cell:hover { transform:scale(1.12); z-index:3; box-shadow:0 4px 12px rgba(59,7,100,.22) }
+td.cell.zero { opacity:.55 }
+td.tot  { border-radius:8px }
+td.foot { font-size:11.5px; font-weight:600; color:var(--ink2) }
+
+/* midnight dashed separator — shift mode */
+td.daybreak, th.daybreak { border-left:2px dashed rgba(91,33,182,.2) !important }
+
+/* agent meta */
+.agname { font-size:13px; font-weight:600; color:var(--ink); line-height:1.3 }
+.agmeta { display:flex; align-items:center; gap:5px; margin-top:2px }
+.badge  {
+  font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:.01em
+}
+.badge.Email     { background:#EDE9FE; color:#5B21B6 }
+.badge.Deferred  { background:#F0FDF4; color:#166534 }
+.badge.Both      { background:#FFF7ED; color:#9A3412 }
+.badge.Unknown   { background:#F3F4F6; color:#6B7280 }
+.statusdot {
+  width:6px; height:6px; border-radius:50%; display:inline-block; flex-shrink:0
+}
+.statusdot.online { background:#22C55E }
+.statusdot.busy   { background:#F59E0B }
+.statusdot.away   { background:#D1D5DB }
+
+/* footer row */
+tfoot td { padding:6px 3px; font-size:11.5px; font-weight:700; color:var(--ink2) }
+tfoot .agcol { color:var(--ink3); font-weight:500 }
+
+/* ── modal ───────────────────────────────────────────────────── */
+.scrim {
+  position:fixed; inset:0; z-index:50;
+  background:rgba(19,12,34,.35); backdrop-filter:blur(4px);
+  display:none; align-items:center; justify-content:center
+}
+.scrim.show { display:flex }
+.modal {
+  background:var(--surface); border-radius:22px;
+  min-width:340px; max-width:90vw; max-height:82vh; overflow:auto;
+  box-shadow:var(--sh-xl); animation:popIn .18s cubic-bezier(.34,1.4,.64,1) both
+}
+@keyframes popIn { from{opacity:0;transform:scale(.94)} to{opacity:1;transform:scale(1)} }
+.mhead {
+  padding:18px 20px 14px; display:flex; align-items:flex-start; justify-content:space-between;
+  border-bottom:1px solid #F0EDF8
+}
+.mhead h3 { font-size:15px; font-weight:700; color:var(--ink) }
+.mhead .msub { font-size:12px; color:var(--ink3); margin-top:2px }
+.mclose {
+  width:28px; height:28px; border-radius:50%; display:flex; align-items:center;
+  justify-content:center; background:#F4F2FA; color:var(--ink2);
+  cursor:pointer; flex-shrink:0; font-size:13px; border:none; box-shadow:none
+}
+.mclose:hover { background:#EDE9FE; color:var(--purple) }
+.mbody { padding:16px 20px 20px }
+.mtable { width:100%; border-collapse:collapse }
+.mtable th {
+  text-align:left; font-size:11px; font-weight:600; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink3); padding:6px 10px 4px
+}
+.mtable td {
+  padding:8px 10px; font-size:13px; color:var(--ink);
+  border-top:1px solid #F4F2FA
+}
+.mtable tr:first-child td { border-top:none }
+.mtable td:not(:first-child) { text-align:right; font-variant-numeric:tabular-nums }
+.mtable td b { font-weight:700 }
+.mpills { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px }
+.mpill {
+  font-size:11.5px; padding:3px 10px; border-radius:999px;
+  background:var(--purple-l); color:var(--purple); font-weight:600
+}
+
+/* ── drop zone ───────────────────────────────────────────────── */
+.drop {
+  position:fixed; inset:0; z-index:60;
+  background:rgba(93,33,182,.07); border:3px dashed #8B5CF6;
+  display:none; align-items:center; justify-content:center;
+  font-size:18px; font-weight:700; color:#6D28D9; letter-spacing:-.01em
+}
+.drop.show { display:flex }
 </style>
 </head>
 <body>
-<header class="top">
-  <div class="row">
-    <div>
-      <h1>CX Hourly Heatmap</h1>
-      <div class="sub" id="subtitle">— tickets per agent per hour · shift-day 7am→7am IST</div>
-    </div>
+
+<header>
+  <div class="hrow">
+    <h1>CX Hourly Heatmap</h1>
+    <span class="datechip" id="datechip">—</span>
     <div class="spacer"></div>
-    <label class="btn">⬆ Import CSV/JSON<input id="file" type="file" accept=".csv,.json" hidden></label>
-    <button id="loadConsole" title="Fetch live from the console API (works when embedded on the console origin)">⟳ Load from console</button>
-    <button id="expCsv">⬇ CSV</button>
-    <button id="expJson">⬇ JSON</button>
-    <button id="loadSample">Sample data</button>
+    <label class="btn">↑ Import<input id="file" type="file" accept=".csv,.json" hidden></label>
+    <button id="loadConsole" title="Fetch live when embedded on the console origin">⟳ Console</button>
+    <button id="expCsv">↓ CSV</button>
+    <button id="expJson">↓ JSON</button>
+    <button id="loadSample">Sample</button>
   </div>
-  <div class="row" style="margin-top:10px">
+  <div class="hrow">
     <div class="seg" id="dutyFilter">
-      <button data-d="all" class="on">All duties</button>
+      <button data-d="all" class="on">All</button>
       <button data-d="Email">Email</button>
       <button data-d="Deferred">Deferred</button>
     </div>
@@ -104,15 +227,19 @@
       <button data-o="shift" class="on">Shift 7am→7am</button>
       <button data-o="cal">Calendar 12am→</button>
     </div>
-    <label class="sub">Sort
-      <select id="sort">
-        <option value="total">by total ↓</option>
-        <option value="name">by name</option>
-        <option value="duty">by duty</option>
-      </select>
-    </label>
+    <div class="seg">
+      <label class="btn" style="box-shadow:none;padding:5px 12px;font-size:12px;color:var(--ink2)">
+        Sort
+        <select id="sort" style="box-shadow:none;padding:0 2px;font-size:12px">
+          <option value="total">Total ↓</option>
+          <option value="name">Name</option>
+          <option value="duty">Duty</option>
+        </select>
+      </label>
+    </div>
     <div class="spacer"></div>
-    <span class="legend">low <span class="scale"></span> high · click a tile for the breakdown</span>
+    <span class="legend"><span>low</span><span class="scale"></span><span>high</span>
+      <span style="margin-left:4px">· click tile for breakdown</span></span>
   </div>
 </header>
 
@@ -120,343 +247,388 @@
 <div class="hint" id="metric"></div>
 <div class="wrap"><div id="grid"></div></div>
 
-<div class="scrim" id="scrim"><div class="modal" id="modal"></div></div>
-<div class="drop" id="drop">Drop CSV / JSON to load</div>
+<div class="scrim" id="scrim">
+  <div class="modal" id="modal"></div>
+</div>
+<div class="drop" id="drop">Drop CSV or JSON to load</div>
 
 <script>
-/* ============================================================
-   STATE  — canonical model the whole UI renders from.
-   state.agents = [{ name, email, duty:'Email'|'Deferred'|'Both'|'Unknown',
-                     status, hours:{H:count}, breakdown:{H:{replies,escalated,closed}} }]
-   Duty MUST come from the console queue field in the data (active_queue),
-   NOT from any shift roster.  See parseCSV() header mapping.
-   ============================================================ */
-const HOURS_CAL = [...Array(24).keys()];                       // 0..23
-const HOURS_SHIFT = [...HOURS_CAL.slice(7), ...HOURS_CAL.slice(0,7)]; // 7..23,0..6
+/* ── state ───────────────────────────────────────────────────── */
+const HOURS_CAL   = [...Array(24).keys()];
+const HOURS_SHIFT = [...HOURS_CAL.slice(7), ...HOURS_CAL.slice(0,7)];
 const state = { date:'', agents:[], order:'shift', duty:'all', sort:'total',
                 metric:'tickets', fields:['replies','escalated','closed'] };
 
-function hourLabel(h){const ap=h<12?'a':'p';let x=h%12;if(x===0)x=12;return x+ap;}
+function hourLabel(h){ const x=h%12||12; return x+(h<12?'a':'p') }
 
-/* ---------- color: diverging around the median of non-zero cells ---------- */
+/* ── color: single white → deep purple ramp ──────────────────── */
 function buildStats(){
   const vals=[];
-  state.agents.forEach(a=>HOURS_CAL.forEach(h=>{const v=a.hours[h]||0; if(v>0)vals.push(v);}));
-  vals.sort((x,y)=>x-y);
-  const med = vals.length? vals[Math.floor(vals.length/2)] : 0;
-  const max = vals.length? vals[vals.length-1] : 1;
-  const min = vals.length? vals[0] : 0;
-  return {med,max,min};
-}
-function cellColor(v,st){
-  if(!v) return {bg:'#fafbfc',fg:'#c7ccd4'};
-  if(v>=st.med){                                  // above median -> blue
-    const t = st.max===st.med?1:(v-st.med)/(st.max-st.med);
-    return mix([237,244,255],[37,99,235],t);
-  } else {                                        // below median -> pink/red
-    const t = st.med===st.min?0:(st.med-v)/(st.med-st.min);
-    return mix([246,247,249],[233,130,150],t);
-  }
-}
-function mix(a,b,t){t=Math.max(0,Math.min(1,t));
-  const c=a.map((x,i)=>Math.round(x+(b[i]-x)*t));
-  const lum=(c[0]*299+c[1]*587+c[2]*114)/1000;
-  return {bg:`rgb(${c[0]},${c[1]},${c[2]})`, fg: lum<140?'#fff':'#0b1220'};
+  state.agents.forEach(a=>HOURS_CAL.forEach(h=>{ const v=a.hours[h]||0; if(v>0) vals.push(v); }));
+  const max = vals.length ? Math.max(...vals) : 1;
+  return { max };
 }
 
-/* ---------- render ---------- */
+function cellColor(v, st){
+  if(!v) return { bg:'#EEEAF8', fg:'#C4B8E0' };      // empty — faint lavender, muted text
+  // 5-stop gradient: lavender-white → mid-purple → deep purple
+  const STOPS = [
+    [237,233,254],   // 0%   #EDE9FE
+    [196,181,253],   // 25%  #C4B5FD
+    [139, 92,246],   // 50%  #8B5CF6
+    [109, 40,217],   // 75%  #6D28D9
+    [ 59,  7,100],   // 100% #3B0764
+  ];
+  const t  = Math.max(0.04, Math.min(1, v / st.max));
+  const si = Math.min(3, Math.floor(t * 4));
+  const st2 = (t * 4) - si;
+  const a  = STOPS[si], b = STOPS[si+1];
+  const c  = a.map((x,i) => Math.round(x + (b[i]-x) * st2));
+  const lum = (c[0]*299 + c[1]*587 + c[2]*114) / 1000;
+  return { bg:`rgb(${c[0]},${c[1]},${c[2]})`, fg: lum < 155 ? '#FFFFFF' : '#3B0764' };
+}
+
+/* ── visible / sorted agents ─────────────────────────────────── */
 function visibleAgents(){
-  let a=state.agents.slice();
-  if(state.duty!=='all') a=a.filter(x=>x.duty===state.duty || (state.duty==='Email'&&x.duty==='Both')||(state.duty==='Deferred'&&x.duty==='Both'));
-  const tot=x=>HOURS_CAL.reduce((s,h)=>s+(x.hours[h]||0),0);
-  if(state.sort==='total') a.sort((x,y)=>tot(y)-tot(x));
-  else if(state.sort==='name') a.sort((x,y)=>x.name.localeCompare(y.name));
-  else if(state.sort==='duty') a.sort((x,y)=>(x.duty||'').localeCompare(y.duty||'')||tot(y)-tot(x));
+  let a = state.agents.slice();
+  if(state.duty!=='all') a=a.filter(x=>x.duty===state.duty||(state.duty==='Email'&&x.duty==='Both')||(state.duty==='Deferred'&&x.duty==='Both'));
+  const tot = x => HOURS_CAL.reduce((s,h)=>s+(x.hours[h]||0),0);
+  if(state.sort==='total')      a.sort((x,y)=>tot(y)-tot(x));
+  else if(state.sort==='name')  a.sort((x,y)=>x.name.localeCompare(y.name));
+  else if(state.sort==='duty')  a.sort((x,y)=>(x.duty||'').localeCompare(y.duty||'')||tot(y)-tot(x));
   return a;
 }
-function agentTotal(a){return HOURS_CAL.reduce((s,h)=>s+(a.hours[h]||0),0);}
+function agentTotal(a){ return HOURS_CAL.reduce((s,h)=>s+(a.hours[h]||0),0) }
 
+/* ── render ──────────────────────────────────────────────────── */
 function render(){
-  const order = state.order==='shift'?HOURS_SHIFT:HOURS_CAL;
-  const st = buildStats();
-  const ags = visibleAgents();
+  const order = state.order==='shift' ? HOURS_SHIFT : HOURS_CAL;
+  const st    = buildStats();
+  const ags   = visibleAgents();
 
-  // summary cards
-  const grand = state.agents.reduce((s,a)=>s+agentTotal(a),0);
-  const byDuty = {};
-  state.agents.forEach(a=>{byDuty[a.duty]=(byDuty[a.duty]||0)+agentTotal(a);});
-  const active = state.agents.filter(a=>agentTotal(a)>0).length;
-  // peak hour
-  const colTot={}; order.forEach(h=>colTot[h]=state.agents.reduce((s,a)=>s+(a.hours[h]||0),0));
-  let peakH=order[0]; order.forEach(h=>{if(colTot[h]>colTot[peakH])peakH=h;});
+  /* cards */
+  const grand   = state.agents.reduce((s,a)=>s+agentTotal(a),0);
+  const byDuty  = {};
+  state.agents.forEach(a=>{ byDuty[a.duty]=(byDuty[a.duty]||0)+agentTotal(a); });
+  const active  = state.agents.filter(a=>agentTotal(a)>0).length;
+  const colTot  = {};
+  order.forEach(h=> colTot[h]=state.agents.reduce((s,a)=>s+(a.hours[h]||0),0));
+  let peakH = order[0];
+  order.forEach(h=>{ if(colTot[h]>colTot[peakH]) peakH=h; });
+
+  document.getElementById('datechip').textContent =
+    state.date || (state.agents===SAMPLE_FLAG.ref ? 'Sample data' : '—');
   document.getElementById('cards').innerHTML = `
-    <div class="card"><div class="k">Total ${state.metric}</div><div class="v">${grand.toLocaleString()}</div></div>
-    <div class="card"><div class="k">Agents active</div><div class="v">${active} <small>/ ${state.agents.length}</small></div></div>
-    <div class="card"><div class="k"><span class="dot" style="background:var(--email)"></span>Email duty</div><div class="v">${(byDuty['Email']||0)+(byDuty['Both']||0)}</div></div>
-    <div class="card"><div class="k"><span class="dot" style="background:var(--deferred)"></span>Deferred duty</div><div class="v">${(byDuty['Deferred']||0)+(byDuty['Both']||0)}</div></div>
-    <div class="card"><div class="k">Peak hour</div><div class="v">${hourLabel(peakH)}–${hourLabel((peakH+1)%24)} <small>${colTot[peakH]}</small></div></div>`;
-  document.getElementById('subtitle').textContent =
-    (state.date? state.date+' · ':'') + `${state.metric} per agent per hour · ${state.order==='shift'?'shift-day 7am→7am IST':'calendar day'}`;
+    <div class="card">
+      <div class="k">Total ${state.metric}</div>
+      <div class="v">${grand.toLocaleString()}</div>
+    </div>
+    <div class="card">
+      <div class="k">Active agents</div>
+      <div class="v">${active}<small> / ${state.agents.length}</small></div>
+    </div>
+    <div class="card">
+      <div class="k"><span class="dot" style="background:#8B5CF6"></span>Email duty</div>
+      <div class="v">${(byDuty['Email']||0)+(byDuty['Both']||0)}</div>
+    </div>
+    <div class="card">
+      <div class="k"><span class="dot" style="background:#22C55E"></span>Deferred duty</div>
+      <div class="v">${(byDuty['Deferred']||0)+(byDuty['Both']||0)}</div>
+    </div>
+    <div class="card">
+      <div class="k">Peak hour</div>
+      <div class="v">${hourLabel(peakH)}<small>–${hourLabel((peakH+1)%24)}  ${colTot[peakH]}</small></div>
+    </div>`;
+
   document.getElementById('metric').textContent =
-    `Showing "${state.metric}". Duty is taken from the console queue in the data (not the roster). ${state.agents===SAMPLE_FLAG.ref?'⚠ Sample data — import a CSV/JSON to replace.':''}`;
+    `Duty is read from the console queue field in the data — not the roster.` +
+    (state.agents===SAMPLE_FLAG.ref ? '  ⚠ Showing sample data — import a CSV or JSON to replace.' : '');
 
-  // table
-  let thead='<tr><th class="agcol">Agent</th>';
-  order.forEach((h,i)=>{ thead+=`<th class="${state.order==='shift'&&h===0?'daybreak':''}">${hourLabel(h)}</th>`; });
-  thead+='<th class="totcol">Total</th></tr>';
+  /* table */
+  let thead = `<tr>
+    <th class="agcol">Agent</th>`;
+  order.forEach(h => {
+    thead += `<th class="${state.order==='shift'&&h===0?'daybreak':''}">${hourLabel(h)}</th>`;
+  });
+  thead += `<th class="totcol">Total</th></tr>`;
 
-  let body='';
-  ags.forEach(a=>{
-    body+=`<tr><td class="agcol"><div class="agname">${esc(a.name)}</div>
-      <div class="agmeta"><span class="badge ${a.duty||'Unknown'}">${a.duty||'Unknown'}</span>
-      <span>${esc(a.status||'')}</span></div></td>`;
-    order.forEach(h=>{
-      const v=a.hours[h]||0; const c=cellColor(v,st);
-      body+=`<td class="cell ${v?'':'zero'} ${state.order==='shift'&&h===0?'daybreak':''}"
-        style="background:${c.bg};color:${c.fg}" data-ag="${esc(a.name)}" data-h="${h}">${v||''}</td>`;
+  let body = '';
+  ags.forEach(a => {
+    const sdot = `<span class="statusdot ${(a.status||'').toLowerCase().includes('online')?'online':(a.status||'').toLowerCase().includes('busy')?'busy':'away'}"></span>`;
+    body += `<tr>
+      <td class="agcol">
+        <div class="agname">${esc(a.name)}</div>
+        <div class="agmeta">
+          <span class="badge ${a.duty||'Unknown'}">${a.duty||'Unknown'}</span>
+          ${sdot}
+          <span style="font-size:11px;color:var(--ink3)">${esc(a.status||'')}</span>
+        </div>
+      </td>`;
+    order.forEach(h => {
+      const v = a.hours[h]||0;
+      const c = cellColor(v, st);
+      body += `<td class="cell${v?'':' zero'}${state.order==='shift'&&h===0?' daybreak':''}"
+        style="background:${c.bg};color:${c.fg}"
+        data-ag="${esc(a.name)}" data-h="${h}">${v||''}</td>`;
     });
-    body+=`<td class="cell tot" data-ag="${esc(a.name)}" data-h="all">${agentTotal(a)}</td></tr>`;
+    const tc = cellColor(agentTotal(a), st);
+    body += `<td class="cell tot" style="background:${tc.bg};color:${tc.fg}"
+      data-ag="${esc(a.name)}" data-h="all">${agentTotal(a)}</td></tr>`;
   });
 
-  let foot='<tr><td class="agcol">Hour total</td>';
-  order.forEach(h=>{ foot+=`<td class="${state.order==='shift'&&h===0?'daybreak':''}">${colTot[h]||''}</td>`; });
-  foot+=`<td class="totcol">${grand}</td></tr>`;
+  let foot = `<tr><td class="agcol foot">Hour total</td>`;
+  order.forEach(h => {
+    foot += `<td class="foot${state.order==='shift'&&h===0?' daybreak':''}">${colTot[h]||''}</td>`;
+  });
+  foot += `<td class="foot totcol">${grand}</td></tr>`;
 
   document.getElementById('grid').innerHTML =
     `<table><thead>${thead}</thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table>`;
-
-  document.querySelectorAll('td.cell').forEach(td=>td.onclick=()=>openModal(td.dataset.ag, td.dataset.h));
+  document.querySelectorAll('td.cell').forEach(td=>td.onclick=()=>openModal(td.dataset.ag,td.dataset.h));
 }
-function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
 
-/* ---------- breakdown modal ---------- */
-function openModal(name,h){
-  const a=state.agents.find(x=>x.name===name); if(!a)return;
-  let html=`<h3><span class="x" onclick="closeModal()">✕</span>${esc(name)}`;
-  if(h==='all'){
-    html+=` · full day</h3><div class="body"><table><tr><th>Hour</th><th>${state.fields.join('</th><th>')}</th><th>Total</th></tr>`;
-    const ordr=state.order==='shift'?HOURS_SHIFT:HOURS_CAL;
-    ordr.forEach(hh=>{const t=a.hours[hh]||0; if(!t)return;
-      const b=a.breakdown&&a.breakdown[hh]||{};
-      html+=`<tr><td>${hourLabel(hh)}–${hourLabel((hh+1)%24)}</td>`+
-        state.fields.map(f=>`<td>${b[f]??'—'}</td>`).join('')+`<td><b>${t}</b></td></tr>`;});
-    html+=`<tr><td><b>Total</b></td>${state.fields.map(f=>`<td><b>${state.fields.length?sumField(a,f):''}</b></td>`).join('')}<td><b>${agentTotal(a)}</b></td></tr></table></div>`;
+function esc(s){
+  return (s==null?'':String(s)).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+}
+
+/* ── modal ───────────────────────────────────────────────────── */
+function openModal(name, h){
+  const a = state.agents.find(x=>x.name===name); if(!a) return;
+  const sdot = `<span class="statusdot ${(a.status||'').toLowerCase().includes('online')?'online':(a.status||'').toLowerCase().includes('busy')?'busy':'away'}" style="width:8px;height:8px"></span>`;
+
+  let inner = '';
+  if(h === 'all'){
+    const ordr = state.order==='shift' ? HOURS_SHIFT : HOURS_CAL;
+    let rows = '';
+    ordr.forEach(hh=>{
+      const t = a.hours[hh]||0; if(!t) return;
+      const b = a.breakdown&&a.breakdown[hh]||{};
+      rows += `<tr><td>${hourLabel(hh)}–${hourLabel((hh+1)%24)}</td>
+        ${state.fields.map(f=>`<td>${b[f]??'—'}</td>`).join('')}
+        <td><b>${t}</b></td></tr>`;
+    });
+    rows += `<tr style="border-top:2px solid #EDE9FE">
+      <td><b>Total</b></td>
+      ${state.fields.map(f=>`<td><b>${sumField(a,f)}</b></td>`).join('')}
+      <td><b>${agentTotal(a)}</b></td></tr>`;
+    inner = `<table class="mtable">
+      <tr><th>Hour</th>${state.fields.map(f=>`<th>${f}</th>`).join('')}<th>Total</th></tr>
+      ${rows}</table>`;
   } else {
-    const b=a.breakdown&&a.breakdown[h]||{};
-    html+=` · ${hourLabel(h)}–${hourLabel((+h+1)%24)}</h3><div class="body"><table>`+
-      state.fields.map(f=>`<tr><th>${f}</th><td>${b[f]??'—'}</td></tr>`).join('')+
-      `<tr><th>Total</th><td><b>${a.hours[h]||0}</b></td></tr></table>
-       <p class="sub" style="margin:10px 0 0">Duty: <b>${a.duty}</b> · status: ${esc(a.status||'—')}</p></div>`;
+    const b = a.breakdown&&a.breakdown[h]||{};
+    inner = `<table class="mtable">
+      ${state.fields.map(f=>`<tr><td>${f.charAt(0).toUpperCase()+f.slice(1)}</td><td><b>${b[f]??'—'}</b></td></tr>`).join('')}
+      <tr style="border-top:2px solid #EDE9FE"><td>Total</td><td><b>${a.hours[h]||0}</b></td></tr>
+    </table>`;
   }
-  document.getElementById('modal').innerHTML=html;
+
+  document.getElementById('modal').innerHTML = `
+    <div class="mhead">
+      <div>
+        <h3>${esc(name)}</h3>
+        <div class="msub">${h==='all'?'Full day breakdown':`Hour ${hourLabel(+h)}–${hourLabel((+h+1)%24)}`}</div>
+      </div>
+      <button class="mclose" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mbody">
+      ${inner}
+      <div class="mpills" style="margin-top:14px">
+        <span class="mpill badge ${a.duty||'Unknown'}" style="font-size:11px">${a.duty||'Unknown'}</span>
+        <span class="mpill" style="background:#F3F4F6;color:#374151">${sdot} ${esc(a.status||'—')}</span>
+        ${a.email?`<span class="mpill" style="background:#F3F4F6;color:#6B7280;font-weight:400">${esc(a.email)}</span>`:''}
+      </div>
+    </div>`;
   document.getElementById('scrim').classList.add('show');
 }
-function sumField(a,f){let s=0;HOURS_CAL.forEach(h=>{const b=a.breakdown&&a.breakdown[h];if(b&&b[f]!=null)s+=+b[f];});return s;}
-function closeModal(){document.getElementById('scrim').classList.remove('show');}
-document.getElementById('scrim').onclick=e=>{if(e.target.id==='scrim')closeModal();};
+function sumField(a,f){
+  let s=0; HOURS_CAL.forEach(h=>{ const b=a.breakdown&&a.breakdown[h]; if(b&&b[f]!=null) s+=+b[f]; }); return s;
+}
+function closeModal(){ document.getElementById('scrim').classList.remove('show') }
+document.getElementById('scrim').onclick = e=>{ if(e.target.id==='scrim') closeModal() };
 
-/* ============================================================
-   INGEST — CSV (long, wide, or daily-summary) + JSON canonical
-   ============================================================ */
+/* ── ingest ──────────────────────────────────────────────────── */
 function normDuty(s){
   s=(s||'').toLowerCase();
   if(/email/.test(s)) return 'Email';
   if(/defer|chat|advisor/.test(s)) return 'Deferred';
   if(/both/.test(s)) return 'Both';
-  return s? 'Unknown':'Unknown';
+  return 'Unknown';
 }
 function csvRows(text){
-  const rows=[];let i=0,f='',row=[],q=false;
-  while(i<text.length){const c=text[i];
-    if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false;} else f+=c; }
-    else { if(c==='"')q=true; else if(c===','){row.push(f);f='';}
-      else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n')i++; if(f!==''||row.length){row.push(f);rows.push(row);} f='';row=[];}
+  const rows=[]; let i=0,f='',row=[],q=false;
+  while(i<text.length){ const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else { if(c==='"') q=true; else if(c===','){row.push(f);f='';}
+      else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n')i++;
+        if(f!==''||row.length){row.push(f);rows.push(row);} f='';row=[]; }
       else f+=c; }
-    i++;}
+    i++; }
   if(f!==''||row.length){row.push(f);rows.push(row);}
-  return rows.filter(r=>r.length>1 || (r.length===1&&r[0].trim()!==''));
+  return rows.filter(r=>r.length>1||(r.length===1&&r[0].trim()!==''));
 }
 function ingestCSV(text){
-  // find header row (first row containing "agent")
   let rows=csvRows(text);
-  let hi=rows.findIndex(r=>r.some(c=>/^agent$/i.test(c.trim())));
-  if(hi<0) hi=0;
+  let hi=rows.findIndex(r=>r.some(c=>/^agent$/i.test(c.trim()))); if(hi<0) hi=0;
   const hdr=rows[hi].map(h=>h.trim());
-  const data=rows.slice(hi+1).filter(r=>r.length>=2 && r.some(c=>c.trim()!=='') && !/subtotal|grand total|^—/i.test(r.join(' ')));
-  const idx=n=>hdr.findIndex(h=>h.toLowerCase()===n);
+  const data=rows.slice(hi+1).filter(r=>r.length>=2&&r.some(c=>c.trim()!=='')&&!/subtotal|grand total|^—/i.test(r.join(' ')));
   const find=re=>hdr.findIndex(h=>re.test(h.toLowerCase()));
-  const cAgent=find(/^agent/), cDuty=find(/duty|queue|active_queue|channel/), cStatus=find(/status/),
-        cHour=find(/^hour|ist.?hour/), cCount=find(/count|tickets|resolved|total resolutions|^total$/),
-        cRep=find(/repl/), cEsc=find(/escal/), cClo=find(/clos/);
-  const hourCols = hdr.map((h,j)=>({h,j})).filter(o=>/^(\d{1,2})$/.test(o.h.trim())&&+o.h<24);
-
-  const map={}; // name -> agent
-  const get=(name,duty,status)=>{ if(!map[name]) map[name]={name,email:'',duty:normDuty(duty),status:status||'',hours:{},breakdown:{}}; return map[name];};
-
-  if(cHour>=0){ // LONG format: one row per agent-hour
-    data.forEach(r=>{const name=(r[cAgent]||'').trim();if(!name)return;
-      const a=get(name, cDuty>=0?r[cDuty]:'', cStatus>=0?r[cStatus]:'');
-      const h=parseInt(r[cHour],10); if(isNaN(h))return;
-      const rep=cRep>=0?+r[cRep]||0:null, es=cEsc>=0?+r[cEsc]||0:null, cl=cClo>=0?+r[cClo]||0:null;
-      let cnt = cCount>=0?+r[cCount]||0 : ((rep||0)+(es||0)+(cl||0));
+  const cAgent=find(/^agent/),cDuty=find(/duty|queue|active_queue|channel/),cStatus=find(/status/),
+        cHour=find(/^hour|ist.?hour/),cCount=find(/count|tickets|resolved|total resolutions|^total$/),
+        cRep=find(/repl/),cEsc=find(/escal/),cClo=find(/clos/);
+  const hourCols=hdr.map((h,j)=>({h,j})).filter(o=>/^(\d{1,2})$/.test(o.h.trim())&&+o.h<24);
+  const map={};
+  const get=(name,duty,status)=>{ if(!map[name]) map[name]={name,email:'',duty:normDuty(duty),status:status||'',hours:{},breakdown:{}}; return map[name]; };
+  if(cHour>=0){
+    data.forEach(r=>{ const name=(r[cAgent]||'').trim(); if(!name) return;
+      const a=get(name,cDuty>=0?r[cDuty]:'',cStatus>=0?r[cStatus]:'');
+      const h=parseInt(r[cHour],10); if(isNaN(h)) return;
+      const rep=cRep>=0?+r[cRep]||0:null,es=cEsc>=0?+r[cEsc]||0:null,cl=cClo>=0?+r[cClo]||0:null;
+      const cnt=cCount>=0?+r[cCount]||0:((rep||0)+(es||0)+(cl||0));
       a.hours[h]=(a.hours[h]||0)+cnt;
-      if(cRep>=0||cEsc>=0||cClo>=0){a.breakdown[h]={replies:rep,escalated:es,closed:cl};}
+      if(cRep>=0||cEsc>=0||cClo>=0) a.breakdown[h]={replies:rep,escalated:es,closed:cl};
     });
     state.fields=['replies','escalated','closed'].filter((_,k)=>[cRep,cEsc,cClo][k]>=0);
     state.metric='tickets';
-  } else if(hourCols.length){ // WIDE format: hour columns 0..23
-    data.forEach(r=>{const name=(r[cAgent]||'').trim();if(!name)return;
-      const a=get(name, cDuty>=0?r[cDuty]:'', cStatus>=0?r[cStatus]:'');
-      hourCols.forEach(o=>{const v=+r[o.j]||0; if(v)a.hours[+o.h]=v;});});
+  } else if(hourCols.length){
+    data.forEach(r=>{ const name=(r[cAgent]||'').trim(); if(!name) return;
+      const a=get(name,cDuty>=0?r[cDuty]:'',cStatus>=0?r[cStatus]:'');
+      hourCols.forEach(o=>{ const v=+r[o.j]||0; if(v) a.hours[+o.h]=v; });
+    });
     state.fields=[]; state.metric='tickets';
-  } else { // DAILY SUMMARY (no hourly) — fill totals at hour -1 so cards/total work
+  } else {
     const cTotal=find(/total resolutions|^total$|resolved/);
-    data.forEach(r=>{const name=(r[cAgent]||'').trim();if(!name)return;
-      const a=get(name, cDuty>=0?r[cDuty]:'', cStatus>=0?r[cStatus]:'');
-      a.email=cAgent>=0&&hdr.find(h=>/email/i.test(h))?r[idx('email')]||'':'';
-      const tot=cTotal>=0?+r[cTotal]||0:0;
-      a.daily=tot; // no hourly to place; leave hours empty
-      if(cRep>=0||cEsc>=0||cClo>=0)a.breakdown.daily={replies:+r[cRep]||0,escalated:+r[cEsc]||0,closed:+r[cClo]||0};
+    data.forEach(r=>{ const name=(r[cAgent]||'').trim(); if(!name) return;
+      const a=get(name,cDuty>=0?r[cDuty]:'',cStatus>=0?r[cStatus]:'');
+      const tot=cTotal>=0?+r[cTotal]||0:0; a.daily=tot;
+      if(cRep>=0||cEsc>=0||cClo>=0) a.breakdown.daily={replies:+r[cRep]||0,escalated:+r[cEsc]||0,closed:+r[cClo]||0};
     });
     state.fields=['replies','escalated','closed'].filter((_,k)=>[cRep,cEsc,cClo][k]>=0);
-    alert('Loaded a DAILY summary (no hourly columns). Totals/duty loaded, but the heatmap needs an hourly export (a "Hour" column, or columns 0..23).');
+    alert('Loaded a daily summary — heatmap needs an hourly export (Hour column or columns 0..23).');
   }
   state.agents=Object.values(map);
-  state.date = guessDate(text);
+  state.date=guessDate(text);
 }
-function guessDate(t){const m=t.match(/20\d\d-\d\d-\d\d/);return m?m[0]:'';}
+function guessDate(t){ const m=t.match(/20\d\d-\d\d-\d\d/); return m?m[0]:'' }
 
 function ingestJSON(text){
   const j=JSON.parse(text);
-  // CONSOLE WIRE SHAPE: cx-ai-ops /api/v1/admin/email/drafts/log (hourly mode).
-  // Detecting hourly_buckets lets the SAME dashboard consume live console data
-  // with zero reshaping — this is the integration seam (see INTEGRATION.md).
   if(Array.isArray(j.hourly_buckets)) return fromConsoleEmailLog(j);
-  state.date=j.date||'';
-  state.metric=j.metric||'tickets';
-  state.fields=j.fields||['replies','escalated','closed'];
+  state.date=j.date||''; state.metric=j.metric||'tickets'; state.fields=j.fields||['replies','escalated','closed'];
   state.agents=(j.agents||[]).map(a=>({name:a.name,email:a.email||'',duty:normDuty(a.duty),status:a.status||'',
-    hours:a.hours||{}, breakdown:a.breakdown||{}}));
+    hours:a.hours||{},breakdown:a.breakdown||{}}));
 }
 
-/* ---- console adapter: /email-drafts/log hourly_buckets -> canonical state ---- */
+/* ── console wire adapter: /email-drafts/log hourly_buckets ──── */
 function fromConsoleEmailLog(j){
   const map={};
   (j.hourly_buckets||[]).forEach(b=>{
     (b.agents||[]).forEach(a=>{
       const key=a.display_name||a.agent_id||'?';
-      const ag = map[key] || (map[key]={
-        name:key, email:a.agent_id||'',
-        // Duty from the console queue field (active_queue/duty), NOT a roster.
+      const ag=map[key]||(map[key]={name:key,email:a.agent_id||'',
         duty:normDuty(a.duty||a.active_queue||a.queue||''),
-        status:a.status||'', hours:{}, breakdown:{}});
-      const t = a.total!=null ? a.total : ((a.replies||0)+(a.escalated||0)+(a.closed||0));
+        status:a.status||'',hours:{},breakdown:{}});
+      const t=a.total!=null?a.total:((a.replies||0)+(a.escalated||0)+(a.closed||0));
       ag.hours[b.hour]=(ag.hours[b.hour]||0)+t;
       ag.breakdown[b.hour]={replies:a.replies??null,escalated:a.escalated??null,closed:a.closed??null};
     });
   });
-  state.agents=Object.values(map);
-  state.date=j.date||'';
-  state.metric='tickets';
-  state.fields=['replies','escalated','closed'];
+  state.agents=Object.values(map); state.date=j.date||'';
+  state.metric='tickets'; state.fields=['replies','escalated','closed'];
 }
 
-/* ---- live fetch from the console (works when embedded on the console origin) ---- */
+/* ── live console fetch ──────────────────────────────────────── */
 async function loadFromConsole(date){
-  // Same base + credentials as the console's own api.ts so the auth cookie travels.
-  const base = (window.HEATMAP_API_BASE || (window.location.origin + '/api/v1/admin/email'));
-  const url = base.replace(/\/$/,'') + '/drafts/log' + (date?`?date=${encodeURIComponent(date)}`:'');
-  const r = await fetch(url,{credentials:'include',headers:{Accept:'application/json'}});
+  const base=(window.HEATMAP_API_BASE||(window.location.origin+'/api/v1/admin/email'));
+  const url=base.replace(/\/$/,'')+'/drafts/log'+(date?`?date=${encodeURIComponent(date)}`:'');
+  const r=await fetch(url,{credentials:'include',headers:{Accept:'application/json'}});
   if(!r.ok) throw new Error('HTTP '+r.status+' from '+url);
-  const j = await r.json();
-  ingestJSON(JSON.stringify(j));
-  SAMPLE_FLAG.ref=null;
-  render();
+  ingestJSON(JSON.stringify(await r.json()));
+  SAMPLE_FLAG.ref=null; render();
 }
 
-/* ---------- export ---------- */
-function download(name,text,type){const b=new Blob([text],{type});const u=URL.createObjectURL(b);
-  const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);}
+/* ── export ──────────────────────────────────────────────────── */
+function dl(name,text,type){ const b=new Blob([text],{type}),u=URL.createObjectURL(b),a=document.createElement('a');
+  a.href=u;a.download=name;a.click();URL.revokeObjectURL(u); }
 function exportJSON(){
-  download(`cx-heatmap-${state.date||'data'}.json`,
-    JSON.stringify({date:state.date,metric:state.metric,fields:state.fields,agents:state.agents},null,2),
-    'application/json');
-}
+  dl(`cx-heatmap-${state.date||'data'}.json`,
+     JSON.stringify({date:state.date,metric:state.metric,fields:state.fields,agents:state.agents},null,2),'application/json'); }
 function exportCSV(){
-  const f=state.fields, head=['Agent','Duty','Status','Hour','Total',...f];
-  let out=[head.join(',')];
-  state.agents.forEach(a=>HOURS_CAL.forEach(h=>{const t=a.hours[h]||0;if(!t)return;
+  const f=state.fields,head=['Agent','Duty','Status','Hour','Total',...f];
+  const out=[head.join(',')];
+  state.agents.forEach(a=>HOURS_CAL.forEach(h=>{ const t=a.hours[h]||0; if(!t) return;
     const b=a.breakdown&&a.breakdown[h]||{};
-    out.push([q(a.name),a.duty,q(a.status),h,t,...f.map(x=>b[x]??'')].join(','));}));
-  download(`cx-heatmap-${state.date||'data'}.csv`,out.join('\n'),'text/csv');
+    out.push([qc(a.name),a.duty,qc(a.status),h,t,...f.map(x=>b[x]??'')].join(','));
+  }));
+  dl(`cx-heatmap-${state.date||'data'}.csv`,out.join('\n'),'text/csv');
 }
-function q(s){s=String(s==null?'':s);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+function qc(s){ s=String(s==null?'':s); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
 
-/* ---------- file handling ---------- */
+/* ── file handling ───────────────────────────────────────────── */
 function loadText(name,text){
-  try{ if(/\.json$/i.test(name)||text.trim().startsWith('{')) ingestJSON(text); else ingestCSV(text);
-    render(); }
+  try{ ((/\.json$/i.test(name)||text.trim().startsWith('{'))?ingestJSON:ingestCSV)(text); render(); }
   catch(e){ alert('Could not parse '+name+': '+e.message); }
 }
-document.getElementById('file').onchange=e=>{const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();r.onload=()=>loadText(f.name,r.result);r.readAsText(f);};
-['dragover','dragenter'].forEach(ev=>window.addEventListener(ev,e=>{e.preventDefault();document.getElementById('drop').classList.add('show');}));
-['dragleave','drop'].forEach(ev=>window.addEventListener(ev,e=>{e.preventDefault();if(ev==='drop'||e.relatedTarget===null)document.getElementById('drop').classList.remove('show');}));
-window.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(!f)return;const r=new FileReader();r.onload=()=>loadText(f.name,r.result);r.readAsText(f);});
+document.getElementById('file').onchange=e=>{ const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=()=>loadText(f.name,r.result); r.readAsText(f); };
+['dragover','dragenter'].forEach(ev=>window.addEventListener(ev,e=>{
+  e.preventDefault(); document.getElementById('drop').classList.add('show'); }));
+['dragleave','drop'].forEach(ev=>window.addEventListener(ev,e=>{
+  e.preventDefault(); if(ev==='drop'||e.relatedTarget===null) document.getElementById('drop').classList.remove('show'); }));
+window.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=()=>loadText(f.name,r.result); r.readAsText(f); });
 
-/* ---------- controls ---------- */
-document.getElementById('dutyFilter').onclick=e=>{if(e.target.dataset.d){[...e.currentTarget.children].forEach(b=>b.classList.toggle('on',b===e.target));state.duty=e.target.dataset.d;render();}};
-document.getElementById('orderSeg').onclick=e=>{if(e.target.dataset.o){[...e.currentTarget.children].forEach(b=>b.classList.toggle('on',b===e.target));state.order=e.target.dataset.o;render();}};
-document.getElementById('sort').onchange=e=>{state.sort=e.target.value;render();};
+/* ── controls ────────────────────────────────────────────────── */
+document.getElementById('dutyFilter').onclick=e=>{ if(e.target.dataset.d){
+  [...e.currentTarget.children].forEach(b=>b.classList.toggle('on',b===e.target));
+  state.duty=e.target.dataset.d; render(); }};
+document.getElementById('orderSeg').onclick=e=>{ if(e.target.dataset.o){
+  [...e.currentTarget.children].forEach(b=>b.classList.toggle('on',b===e.target));
+  state.order=e.target.dataset.o; render(); }};
+document.getElementById('sort').onchange=e=>{ state.sort=e.target.value; render(); };
 document.getElementById('expCsv').onclick=exportCSV;
 document.getElementById('expJson').onclick=exportJSON;
-document.getElementById('loadSample').onclick=()=>{loadSample();render();};
+document.getElementById('loadSample').onclick=()=>{ loadSample(); render(); };
 document.getElementById('loadConsole').onclick=()=>{
   const d=new URLSearchParams(location.search).get('date')||state.date.replace(/ .*/,'')||'';
-  loadFromConsole(d).catch(e=>alert('Could not load from console: '+e.message+
-    '\n\nThis button works when the dashboard is embedded on the console origin '+
-    '(same auth cookie). Standalone, import a CSV/JSON instead.'));
+  loadFromConsole(d).catch(e=>alert('Console load failed: '+e.message+
+    '\n\nThis works only when embedded on the console origin (auth cookie). Import a file instead.'));
 };
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
 
-/* Deep-link: ?source=console[&date=YYYY-MM-DD] auto-loads live data on open
-   (used when the console embeds/links the dashboard). Falls back to sample. */
-(function initSource(){
+/* deep-link: ?source=console[&date=YYYY-MM-DD] */
+(function(){
   const q=new URLSearchParams(location.search);
-  if(q.get('source')==='console'){
-    loadFromConsole(q.get('date')||'').catch(()=>{loadSample();render();});
-  }
+  if(q.get('source')==='console')
+    loadFromConsole(q.get('date')||'').catch(()=>{ loadSample(); render(); });
 })();
 
-/* ============================================================
-   SAMPLE DATA — so the dashboard renders immediately.
-   Replace by importing a real CSV/JSON.
-   ============================================================ */
+/* ── sample data (synthetic, no real names) ──────────────────── */
 const SAMPLE_FLAG={ref:null};
 function loadSample(){
-  // Synthetic placeholders only — no real agent data in the public sample.
   const defs=[
-    ['Agent 01','Email','online'],['Agent 02','Email','away'],['Agent 03','Email','online'],
-    ['Agent 04','Email','away'],['Agent 05','Deferred','online'],['Agent 06','Deferred','busy'],
+    ['Agent 01','Email','online'],['Agent 02','Email','away'],
+    ['Agent 03','Email','online'],['Agent 04','Email','away'],
+    ['Agent 05','Deferred','online'],['Agent 06','Deferred','busy'],
     ['Agent 07','Deferred','online'],['Agent 08','Deferred','away'],
-    ['Agent 09','Deferred','online'],['Agent 10','Deferred','away'],['Agent 11','Email','online'],
+    ['Agent 09','Deferred','online'],['Agent 10','Deferred','away'],
+    ['Agent 11','Email','online'],
   ];
-  let seed=7;const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280;};
+  let seed=7; const rnd=()=>{ seed=(seed*9301+49297)%233280; return seed/233280; };
   const agents=defs.map(([name,duty,status])=>{
     const hours={},breakdown={};
     HOURS_CAL.forEach(h=>{
-      const active = duty==='Email' ? (h>=7&&h<=23) : true;            // crude shift shape
-      if(active && rnd()>0.32){
-        const rep=Math.floor(rnd()*12), clo=Math.floor(rnd()*8), es=rnd()>0.85?1:0;
+      const active=duty==='Email'?(h>=7&&h<=23):true;
+      if(active&&rnd()>0.32){
+        const rep=Math.floor(rnd()*12),clo=Math.floor(rnd()*8),es=rnd()>0.85?1:0;
         const t=rep+clo+es; if(t){hours[h]=t;breakdown[h]={replies:rep,escalated:es,closed:clo};}
       }
     });
     return {name,email:name.toLowerCase().replace(/ /g,'.')+'@example.com',duty,status,hours,breakdown};
   });
-  state.date='2026-06-01 (sample)';state.metric='tickets';state.fields=['replies','escalated','closed'];
+  state.date='2026-06-01 (sample)'; state.metric='tickets'; state.fields=['replies','escalated','closed'];
   state.agents=agents; SAMPLE_FLAG.ref=agents;
 }
-loadSample();render();
+loadSample(); render();
 </script>
 </body>
 </html>
